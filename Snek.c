@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
-#include <locale.h>
 #include <windows.h>
 #include <time.h>
 #include <math.h>
@@ -14,8 +13,9 @@
 #define LEFT 2
 #define UP 3
 #define DOWN 4
+#define ESC 27
 
-#define MAX_TAIL 30
+#define MAX_TAIL 50
 
 void game_over_screen();
 void change_direction();
@@ -53,6 +53,7 @@ int main()
         }
     if(snake.x == food.x && snake.y == food.y)
     {
+        score=score+50;
         check_food=FALSE;
         size++;
     }
@@ -66,7 +67,8 @@ int main()
     printf("Score: %d",score);
     if(snake.x==0 || snake.x==WIDTH-1 || snake.y==0 || snake.y==HEIGHT-1)
         game_over=TRUE;
-    Sleep(150);
+    if(!game_over)
+        Sleep(150);
     }while(!game_over);
     game_over_screen();
     return 0;
@@ -77,7 +79,7 @@ void game_over_screen()
     system("cls");
     FILE* file;
     int highscore=0;
-    file=fopen("highscore.txt","r"); // Descobrir o modo bom de leitura
+    file=fopen("highscore.txt","r");
     if(!file)
     {
         gotoxy(10,10);
@@ -85,12 +87,20 @@ void game_over_screen()
     }
     else
     {
-        fread(&highscore,sizeof(int),1,file);
+        fscanf(file,"%d",&highscore);
         if(score>highscore)
-            highscore=score; // Atualizar score aqui
+            highscore=score;
     }
-    gotoxy(10,20);
-    printf("Final Score: %d || Highscore: %d",score,highscore);
+    file=fopen("highscore.txt","w");
+    fprintf(file,"%d",highscore);
+    fclose(file);
+    gotoxy(0,10);
+    printf("Final Score: %d\nHighscore: %d",score,highscore);
+    do
+    {
+        gotoxy(0,15);
+        printf("Press ESC to exit. . .");
+    }while(getch()!=ESC);
 }
 
 void change_direction()
@@ -135,7 +145,7 @@ void draw_map()
         for(j=0;j<HEIGHT;j++)
         {
             if(i==0 || i==WIDTH-1 || j==0 || j==HEIGHT-1)
-                printf("#");
+                printf("%c",178);
             else
                 printf(" ");
 
@@ -173,11 +183,11 @@ void draw_snake()
         break;
     }
     gotoxy(snake.x,snake.y);
-    printf("O");
+    printf("%c",219);
     for(i=0;i<size;i++)
     {
         gotoxy(tail[i].x,tail[i].y);
-        printf("o");
+        printf("%c",219);
     }
 }
 
@@ -199,32 +209,30 @@ void spawn_food()
     food.x= 1 + (rand() % (WIDTH-2)); // MIN + (rand() % (MAX - MIN + 1));
     food.y= 1 + (rand() % (HEIGHT-2));
     gotoxy(food.x,food.y);
-    printf("F");
+    printf("%c",157);
 }
 
-void gotoxy(int x, int y) // Move o cursor para (x,y)
+void gotoxy(int x, int y) // Moves cursor to (x, y)
 {
     COORD coord = {0, 0};
-    coord.X = x; // Coordenadas X e Y
+    coord.X = x; // X and Y coordinates
     coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 void format_prompt()
 {
-    // Formatação do prompt
-    setlocale(LC_ALL, "Portuguese");                  // Língua para português
-    system("title Snake");                            // Muda nome do prompt
-    system("color 0C");                               // Cor normal do prompt
-    SMALL_RECT WinRect = {0, 0, WIDTH-1, HEIGHT-1};   // Formata o tamanho do prompt
+    system("title Snake");                            // Prompt title
+    system("color 0A");                               // Prompt colour
+    SMALL_RECT WinRect = {0, 0, WIDTH-1, HEIGHT-1};   // Prompt size
     SMALL_RECT* WinSize = &WinRect;
     SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), 1, WinSize);
     hide_cursor();
 }
 
-void hide_cursor() // Esconde o cursor default do prompt
+void hide_cursor()
 {
-    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // Esconde o cursor do console
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // Hides the prompt cursor
     CONSOLE_CURSOR_INFO info;
     info.dwSize = 100;
     info.bVisible = FALSE;
